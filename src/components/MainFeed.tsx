@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Moon, Sun, MessageSquare, LayoutGrid, List, Menu, Sliders } from 'lucide-react';
-import { Topic, TelegramUser, SignalProfile } from '../types';
+import { Topic, TelegramUser, SignalProfile, TelegramMessage } from '../types'; // Import TelegramMessage
 import { TwitterService } from '../services/twitterService';
 import { TelegramChannelService } from '../services/telegramChannelService';
 import { AIService } from '../services/aiService';
@@ -15,8 +15,9 @@ import TweetDetailView from './TweetDetailView';
 import AILoader from './AILoader';
 import Footer from './Footer';
 import SignalProfileDashboard from './SignalProfileDashboard';
-import FeedbackButton from './FeedbackButton'; // Import new component
-import FeedbackModal from './FeedbackModal';   // Import new component
+import FeedbackButton from './FeedbackButton';
+import FeedbackModal from './FeedbackModal';
+import AIDebugPanel from './AIDebugPanel';
 
 interface MainFeedProps {
   initialTopics: Topic[];
@@ -43,9 +44,9 @@ const MainFeed: React.FC<MainFeedProps> = ({ initialTopics, setTopics, darkMode,
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  // New state for feedback
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
+  const [aiDebugInfo, setAiDebugInfo] = useState<any | null>(null);
 
   const twitterService = TwitterService.getInstance();
   const telegramChannelService = TelegramChannelService.getInstance();
@@ -83,7 +84,6 @@ const MainFeed: React.FC<MainFeedProps> = ({ initialTopics, setTopics, darkMode,
     if (!telegramUser) return;
     try {
       const consentStatus = await supabaseService.getFeedbackConsent(telegramUser.id);
-      // Only ask if we've never asked before (status is null)
       if (consentStatus === null) {
         const message = "Thank you for using our app! We would love to get your ideas and feedback to make it better. May we contact you via DM for more personalized feedback in the future?";
         const userGaveConsent = await telegramService.showConfirm(message);
@@ -98,11 +98,14 @@ const MainFeed: React.FC<MainFeedProps> = ({ initialTopics, setTopics, darkMode,
   };
 
   const handleAddTopic = async (data: any) => {
-     if (!telegramUser) return;
-    const isFirstTopic = topics.length === 0; // Check if it's the first topic being added
+    if (!telegramUser) return;
+    const isFirstTopic = topics.length === 0;
     setIsLoading(true);
     try {
-        let twitterData = null, telegramMessages = null;
+        // --- THIS IS THE FIX ---
+        let twitterData = null;
+        let telegramMessages: TelegramMessage[] = []; // Initialize as an empty array instead of null
+        
         let displayName = '', profilePicture = '';
 
         if ((data.type === 'twitter' || data.type === 'both') && data.username) {
@@ -125,17 +128,18 @@ const MainFeed: React.FC<MainFeedProps> = ({ initialTopics, setTopics, darkMode,
         setIsModalOpen(false);
         setShowAILoader(true);
 
-        const [twitterResult, telegramResult] = await Promise.all([
-            twitterData?.tweets?.length ? aiService.summarizeContent(twitterData.tweets, [], data.username, undefined, data.summaryLength, data.customSummaryLength, data.trackedSenders) : Promise.resolve({}),
-            telegramMessages?.length ? aiService.summarizeContent([], telegramMessages, undefined, data.channelName, data.summaryLength, data.customSummaryLength, data.trackedSenders) : Promise.resolve({})
-        ]);
+        const aiResult = await aiService.summarizeContent(
+            twitterData?.tweets, telegramMessages, data.username, data.channelName, 
+            data.summaryLength, data.customSummaryLength, data.trackedSenders
+        );
         
         setShowAILoader(false);
+        setAiDebugInfo(aiResult.debugInfo);
         
         const newTopicData: Omit<Topic, 'id'> = {
             type: data.type === 'private_telegram' ? 'telegram' : data.type,
             username: data.username, channelName: data.channelName, telegramChannelId: data.channelId,
-            displayName, twitterSummary: twitterResult.twitterSummary, telegramSummary: telegramResult.telegramSummary,
+            displayName, twitterSummary: aiResult.twitterSummary, telegramSummary: aiResult.telegramSummary,
             tweets: twitterData?.tweets, telegramMessages, lastUpdated: Date.now(), profilePicture,
             summaryLength: data.summaryLength, customSummaryLength: data.customSummaryLength, trackedSenders: data.trackedSenders
         };
@@ -144,10 +148,7 @@ const MainFeed: React.FC<MainFeedProps> = ({ initialTopics, setTopics, darkMode,
         setTopics(prev => [...prev, { id: addedTopicFromDB.id, ...newTopicData }]);
         telegramService.hapticFeedback('medium');
         
-        // Trigger consent request if it was the first topic
-        if (isFirstTopic) {
-            askForFeedbackConsent();
-        }
+        if (isFirstTopic) askForFeedbackConsent();
     } catch (error: any) {
         setShowAILoader(false);
         await telegramService.showAlert(error.message || 'Failed to add signal source.');
@@ -161,7 +162,8 @@ const MainFeed: React.FC<MainFeedProps> = ({ initialTopics, setTopics, darkMode,
     if (!topic) return;
     setRefreshingTopics(prev => new Set(prev).add(topicId));
     try {
-        let twitterData = null, telegramMessages = null;
+        let twitterData = null;
+        let telegramMessages: TelegramMessage[] = [];
         let displayName = topic.displayName, profilePicture = topic.profilePicture;
         
         if ((topic.type === 'twitter' || topic.type === 'both') && topic.username) {
@@ -179,15 +181,16 @@ const MainFeed: React.FC<MainFeedProps> = ({ initialTopics, setTopics, darkMode,
         
         setShowAILoader(true);
 
-        const [twitterResult, telegramResult] = await Promise.all([
-            twitterData?.tweets?.length ? aiService.summarizeContent(twitterData.tweets, [], topic.username, undefined, topic.summaryLength, topic.customSummaryLength, topic.trackedSenders) : Promise.resolve({ twitterSummary: topic.twitterSummary }),
-            telegramMessages?.length ? aiService.summarizeContent([], telegramMessages, undefined, topic.channelName, topic.summaryLength, topic.customSummaryLength, topic.trackedSenders) : Promise.resolve({ telegramSummary: topic.telegramSummary })
-        ]);
+        const aiResult = await aiService.summarizeContent(
+            twitterData?.tweets, telegramMessages, topic.username, topic.channelName, 
+            topic.summaryLength, topic.customSummaryLength, topic.trackedSenders
+        );
 
         setShowAILoader(false);
-
+        setAiDebugInfo(aiResult.debugInfo);
+        
         const updatedFields: Partial<Topic> = {
-            twitterSummary: twitterResult.twitterSummary, telegramSummary: telegramResult.telegramSummary,
+            twitterSummary: aiResult.twitterSummary, telegramSummary: aiResult.telegramSummary,
             tweets: twitterData?.tweets || topic.tweets, telegramMessages: telegramMessages || topic.telegramMessages,
             lastUpdated: Date.now(), displayName, profilePicture
         };
@@ -307,7 +310,6 @@ const MainFeed: React.FC<MainFeedProps> = ({ initialTopics, setTopics, darkMode,
               <button onClick={() => setIsDailyBriefModalOpen(true)} className="px-6 py-3 rounded-full bg-gray-100 dark:bg-gray-800 font-medium flex items-center space-x-2 text-black dark:text-white"><MessageSquare size={16}/><span>Daily Brief</span></button>
               <button onClick={() => setIsModalOpen(true)} className="px-6 py-3 rounded-full bg-black dark:bg-white text-white dark:text-black font-medium flex items-center space-x-2"><Plus size={18}/><span>Add Signal</span></button>
             </div>
-            {/* Mobile Menu Button */}
             <div className="flex sm:hidden justify-end">
               <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 rounded-full glass border"><Menu className="w-5 h-5 text-black dark:text-white" /></button>
             </div>
@@ -329,20 +331,12 @@ const MainFeed: React.FC<MainFeedProps> = ({ initialTopics, setTopics, darkMode,
         )}
       </div>
       <Footer telegramUser={telegramUser} />
-      
-      {/* Feedback Components */}
       <FeedbackButton onClick={() => setIsFeedbackModalOpen(true)} />
-      <FeedbackModal 
-        isOpen={isFeedbackModalOpen}
-        onClose={() => setIsFeedbackModalOpen(false)}
-        onSubmit={handleSubmitFeedback}
-        isLoading={isFeedbackLoading}
-      />
-      
-      {/* Other Modals */}
+      <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} onSubmit={handleSubmitFeedback} isLoading={isFeedbackLoading} />
       <AddTopicModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onAdd={handleAddTopic} isLoading={isLoading} showAILoader={showAILoader} />
       <DailyBriefModal isOpen={isDailyBriefModalOpen} onClose={() => setIsDailyBriefModalOpen(false)} topics={topics} />
       <AILoader isVisible={showAILoader} />
+      <AIDebugPanel debugInfo={aiDebugInfo} onClose={() => setAiDebugInfo(null)} />
     </div>
   );
 };

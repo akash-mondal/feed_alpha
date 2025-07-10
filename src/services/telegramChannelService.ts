@@ -16,7 +16,11 @@ export class TelegramChannelService {
 
   async joinPrivateChannel(inviteLink: string): Promise<TelegramResponse> {
     try {
-      const hash = inviteLink.split('/').pop();
+      // --- THIS IS THE FIX ---
+      // Get the last part of the URL and remove the leading '+' sign if it exists.
+      const rawHash = inviteLink.split('/').pop();
+      const hash = rawHash ? rawHash.replace('+', '') : '';
+
       if (!hash) {
         throw new Error('Invalid invite link format');
       }
@@ -26,13 +30,15 @@ export class TelegramChannelService {
       const data: TelegramResponse = await response.json();
 
       if (!response.ok || data.status !== 'success') {
-        const errorDetail = (data as any).detail || 'Failed to join channel.';
+        // Use the detail message from the API if available, otherwise use a generic message.
+        const errorDetail = (data as any).detail || 'The invite link has expired or been revoked.';
         throw new Error(errorDetail);
       }
 
       return data;
     } catch (error) {
       console.error('Error joining private Telegram channel:', error);
+      // Re-throw the error so the UI can catch it and display the message.
       throw error;
     }
   }
@@ -64,15 +70,7 @@ export class TelegramChannelService {
       const data = await response.json();
 
       if (Array.isArray(data)) {
-        // BUG FIX: Re-added filtering for messages from the last 24 hours.
-        const now = Date.now();
-        const twentyFourHours = 24 * 60 * 60 * 1000;
-        
-        return (data as TelegramMessage[]).filter((message) => {
-          const messageTime = new Date(message.date).getTime();
-          return (now - messageTime) <= twentyFourHours;
-        });
-
+        return data as TelegramMessage[];
       } else if (data.message && data.message.includes('No activity')) {
         return [];
       } else {
