@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ArrowLeft, Twitter, MessageSquare } from 'lucide-react';
 import { Topic, TelegramUser } from '../types';
 import TweetCard from './TweetCard';
 import TelegramMessageCard from './TelegramMessageCard';
+import AttestationButton from './AttestationButton';
+import AttestationModal from './AttestationModal';
 
 interface TweetDetailViewProps {
   topic: Topic;
@@ -12,6 +14,7 @@ interface TweetDetailViewProps {
 }
 
 const TweetDetailView: React.FC<TweetDetailViewProps> = ({ topic, onBack, darkMode, telegramUser }) => {
+  const [isAttestationModalOpen, setIsAttestationModalOpen] = useState(false);
   // Get top 5 tweets and messages
   const topTweets = topic.tweets?.slice(0, 5) || [];
   const topMessages = topic.telegramMessages?.slice(0, 5) || [];
@@ -123,6 +126,8 @@ const TweetDetailView: React.FC<TweetDetailViewProps> = ({ topic, onBack, darkMo
           )}
         </div>
       </div>
+      <AttestationButton onClick={() => setIsAttestationModalOpen(true)} />
+      <AttestationModal isOpen={isAttestationModalOpen} onClose={() => setIsAttestationModalOpen(false)} />
     </div>
   );
 };

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { ArrowLeft, Plus, Edit, Trash2, Users, Tag, Hash, Type } from 'lucide-react';
 import { SignalProfile, Topic } from '../types';
 import SignalProfileModal from './SignalProfileModal';
+import AttestationButton from './AttestationButton';
+import AttestationModal from './AttestationModal';
 
 interface SignalProfileDashboardProps {
   profiles: SignalProfile[];
@@ -15,6 +17,7 @@ const SignalProfileDashboard: React.FC<SignalProfileDashboardProps> = ({ profile
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProfile, setEditingProfile] = useState<SignalProfile | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAttestationModalOpen, setIsAttestationModalOpen] = useState(false);
 
   const handleSave = async (data: any, profileId?: string) => {
     setIsLoading(true);
@@ -93,7 +96,6 @@ const SignalProfileDashboard: React.FC<SignalProfileDashboardProps> = ({ profile
                             {rule.type === 'custom' && <Users size={14} className="text-yellow-500"/>}
                             <span className="font-mono bg-white dark:bg-black px-2 py-0.5 rounded text-black dark:text-white">{rule.value}</span>
                             
-                            {/* --- THIS IS THE FIX --- */}
                             {rule.type !== 'custom' && <span className="text-gray-500 dark:text-gray-400">{`(>${rule.mentionThreshold} in ${rule.groupThreshold} groups)`}</span>}
                          </div>
                        ))}
@@ -120,6 +122,8 @@ const SignalProfileDashboard: React.FC<SignalProfileDashboardProps> = ({ profile
         allTopics={allTopics}
         existingProfile={editingProfile}
       />
+      <AttestationButton onClick={() => setIsAttestationModalOpen(true)} />
+      <AttestationModal isOpen={isAttestationModalOpen} onClose={() => setIsAttestationModalOpen(false)} />
     </div>
   );
 };

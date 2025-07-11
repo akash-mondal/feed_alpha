@@ -12,6 +12,29 @@ export class AIService {
     }
     return AIService.instance;
   }
+  
+  async getAttestationReport(): Promise<any> {
+    const model = 'phala/llama-3.3-70b-instruct';
+    const url = `${API_CONFIG.ai.baseUrl}/attestation/report?model=${encodeURIComponent(model)}`;
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${API_CONFIG.ai.key}`,
+        'Content-Type': 'application/json',
+        'accept': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error("Attestation API Error:", data);
+      throw new Error(`Attestation API request failed with status ${response.status}: ${JSON.stringify(data, null, 2)}`);
+    }
+
+    return data;
+  }
 
   private isWithin24Hours(dateString: string): boolean {
     const messageTime = new Date(dateString).getTime();
@@ -53,7 +76,6 @@ export class AIService {
 
       // --- Process Twitter Content ---
       if (tweets.length > 0 && twitterUsername) {
-        // Still filter by time here, as the combined raw data might contain old posts.
         let relevantTweets = tweets.filter(tweet => this.isWithin24Hours(tweet.createdAt));
         
         if (hasTrackedSenders) {
@@ -75,22 +97,17 @@ export class AIService {
           const systemPrompt = `You are a sharp social media analyst. Your goal is to synthesize raw X posts into a clear, engaging briefing of about ${wordCount} words. ${focusPrompt} Weave these details into a smooth, easy-to-read paragraph. Do not use lists.`;
           const userPrompt = `Summarize the recent X activity for @${twitterUsername}. The most relevant posts from the last 24 hours are:\n\n${tweetTexts}`;
           
-          debugInfo.twitter.systemPrompt = systemPrompt;
-          debugInfo.twitter.userPrompt = userPrompt;
           try {
             const aiResult = await this.callAI(userPrompt, systemPrompt);
             twitterSummary = aiResult.content;
-            debugInfo.twitter.rawResponse = aiResult.rawResponse;
           } catch (error: any) {
              twitterSummary = "Unable to generate X summary at this time.";
-             debugInfo.twitter.error = error.message;
           }
         }
       }
 
       // --- Process Telegram Content ---
       if (telegramMessages.length > 0 && telegramChannelName) {
-        // FIX: Use the raw telegramMessages array directly without any time filtering.
         let relevantMessages = telegramMessages;
 
         if (hasTrackedSenders) {
@@ -102,35 +119,30 @@ export class AIService {
           );
         }
         
-        if (relevantMessages.length === 0) {
-          telegramSummary = hasTrackedSenders ? `The tracked members in the "${telegramChannelName}" channel have not sent messages recently.` : `No new activity in the "${telegramChannelName}" channel recently.`;
-        } else {
+        if (relevantMessages.length > 0) {
           const messageTexts = relevantMessages.map(msg => `From ${msg.sender.name}: "${msg.text}" (~${Math.floor((now.getTime() - new Date(msg.date).getTime()) / 3600000)}h ago)`).join('\n\n');
           const focusPrompt = hasTrackedSenders ? `Focus on the conversation points from these specific members: ${trackedSenders.join(', ')}.` : `Identify the main themes of conversation from the channel.`;
           const systemPrompt = `You are an analyst summarizing a group chat. Synthesize key discussion points from a Telegram channel into a clear summary of about ${wordCount} words. ${focusPrompt} Weave details into a smooth paragraph. Do not use lists.`;
           const userPrompt = `Summarize the recent discussion in the "${telegramChannelName}" Telegram channel based on these key messages:\n\n${messageTexts}`;
 
-          debugInfo.telegram.systemPrompt = systemPrompt;
-          debugInfo.telegram.userPrompt = userPrompt;
            try {
             const aiResult = await this.callAI(userPrompt, systemPrompt);
             telegramSummary = aiResult.content;
-            debugInfo.telegram.rawResponse = aiResult.rawResponse;
           } catch (error: any) {
              telegramSummary = "Unable to generate Telegram summary at this time.";
-             debugInfo.telegram.error = error.message;
           }
+        } else {
+            telegramSummary = hasTrackedSenders ? `The tracked members in the "${telegramChannelName}" channel have not sent messages recently.` : `No new activity in the "${telegramChannelName}" channel recently.`;
         }
       }
 
-      return { twitterSummary, telegramSummary, debugInfo };
+      return { twitterSummary, telegramSummary, debugInfo: null }; // No debug info needed anymore
     } catch (error: any) {
       console.error('Error in summarizeContent:', error);
-      debugInfo.error = `A critical error occurred in summarizeContent: ${error.message}`;
       return { 
         twitterSummary: tweets.length > 0 ? 'Unable to generate X summary at this time.' : undefined,
         telegramSummary: telegramMessages.length > 0 ? 'Unable to generate Telegram summary at this time.' : undefined,
-        debugInfo
+        debugInfo: null
       };
     }
   }
@@ -144,12 +156,8 @@ export class AIService {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${API_CONFIG.ai.key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'deepseek-ai/DeepSeek-R1',
+        model: 'phala/llama-3.3-70b-instruct',
         messages: [{ role: 'system', content: systemPrompt }, { role: 'user', content: prompt }],
-        stream: false, 
-        max_tokens: 4000, 
-        temperature: 0.6,
-        stop: ["<think>", "</think>"]
       }),
     });
 

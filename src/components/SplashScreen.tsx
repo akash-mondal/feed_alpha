@@ -70,6 +70,14 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, topics, darkMod
 
   return (
     <div className={`fixed inset-0 z-50 bg-white dark:bg-black overflow-hidden`}>
+      {/* Skip Button */}
+      <button
+        onClick={onComplete}
+        className="fixed top-4 right-4 z-[60] px-4 py-2 rounded-full text-sm font-medium glass text-black dark:text-white hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+      >
+        Skip
+      </button>
+
       {/* Screen 1: Initial Logo with Fade-Out Logic */}
       <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 ${isFading || screenState !== 'initialLogo' ? 'opacity-0' : 'opacity-100'}`}>
         <div className="text-center transform scale-75">

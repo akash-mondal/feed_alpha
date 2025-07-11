@@ -11,7 +11,7 @@ const API_CONFIG = {
   },
   ai: {
     baseUrl: '/ai-api',
-    key: atob('YzAxNjU0NDA0OTM4NDZiMzM5NDM4ZmFiNzYyNjgzODM1Y2Y4Yjc4YTljMmQzYzEyMTY1NTVlNDkxNTY1Y2E2YQ==')
+    key: atob('c2stM0JXMXZQT2RHRXlHaEJwclZqb3VxUTdpTmdSc1Y0WUlxWTRrTll2SnBham1MeW53')
   },
   telegram: {
     baseUrl: '/telegram-api'

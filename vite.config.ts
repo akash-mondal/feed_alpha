@@ -22,7 +22,7 @@ export default defineConfig({
         secure: true
       },
       '/ai-api': {
-        target: 'https://api.together.xyz/v1',
+        target: 'https://api.redpill.ai/v1',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/ai-api/, ''),
         secure: true

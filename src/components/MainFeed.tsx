@@ -17,7 +17,8 @@ import Footer from './Footer';
 import SignalProfileDashboard from './SignalProfileDashboard';
 import FeedbackButton from './FeedbackButton';
 import FeedbackModal from './FeedbackModal';
-import AIDebugPanel from './AIDebugPanel';
+import AttestationButton from './AttestationButton';
+import AttestationModal from './AttestationModal';
 
 interface MainFeedProps {
   initialTopics: Topic[];
@@ -46,7 +47,7 @@ const MainFeed: React.FC<MainFeedProps> = ({ initialTopics, setTopics, darkMode,
 
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
-  const [aiDebugInfo, setAiDebugInfo] = useState<any | null>(null);
+  const [isAttestationModalOpen, setIsAttestationModalOpen] = useState(false);
 
   const twitterService = TwitterService.getInstance();
   const telegramChannelService = TelegramChannelService.getInstance();
@@ -102,9 +103,8 @@ const MainFeed: React.FC<MainFeedProps> = ({ initialTopics, setTopics, darkMode,
     const isFirstTopic = topics.length === 0;
     setIsLoading(true);
     try {
-        // --- THIS IS THE FIX ---
         let twitterData = null;
-        let telegramMessages: TelegramMessage[] = []; // Initialize as an empty array instead of null
+        let telegramMessages: TelegramMessage[] = [];
         
         let displayName = '', profilePicture = '';
 
@@ -128,18 +128,17 @@ const MainFeed: React.FC<MainFeedProps> = ({ initialTopics, setTopics, darkMode,
         setIsModalOpen(false);
         setShowAILoader(true);
 
-        const aiResult = await aiService.summarizeContent(
+        const { twitterSummary, telegramSummary } = await aiService.summarizeContent(
             twitterData?.tweets, telegramMessages, data.username, data.channelName, 
             data.summaryLength, data.customSummaryLength, data.trackedSenders
         );
         
         setShowAILoader(false);
-        setAiDebugInfo(aiResult.debugInfo);
         
         const newTopicData: Omit<Topic, 'id'> = {
             type: data.type === 'private_telegram' ? 'telegram' : data.type,
             username: data.username, channelName: data.channelName, telegramChannelId: data.channelId,
-            displayName, twitterSummary: aiResult.twitterSummary, telegramSummary: aiResult.telegramSummary,
+            displayName, twitterSummary, telegramSummary,
             tweets: twitterData?.tweets, telegramMessages, lastUpdated: Date.now(), profilePicture,
             summaryLength: data.summaryLength, customSummaryLength: data.customSummaryLength, trackedSenders: data.trackedSenders
         };
@@ -181,16 +180,15 @@ const MainFeed: React.FC<MainFeedProps> = ({ initialTopics, setTopics, darkMode,
         
         setShowAILoader(true);
 
-        const aiResult = await aiService.summarizeContent(
+        const { twitterSummary, telegramSummary } = await aiService.summarizeContent(
             twitterData?.tweets, telegramMessages, topic.username, topic.channelName, 
             topic.summaryLength, topic.customSummaryLength, topic.trackedSenders
         );
 
         setShowAILoader(false);
-        setAiDebugInfo(aiResult.debugInfo);
         
         const updatedFields: Partial<Topic> = {
-            twitterSummary: aiResult.twitterSummary, telegramSummary: aiResult.telegramSummary,
+            twitterSummary, telegramSummary,
             tweets: twitterData?.tweets || topic.tweets, telegramMessages: telegramMessages || topic.telegramMessages,
             lastUpdated: Date.now(), displayName, profilePicture
         };
@@ -332,11 +330,12 @@ const MainFeed: React.FC<MainFeedProps> = ({ initialTopics, setTopics, darkMode,
       </div>
       <Footer telegramUser={telegramUser} />
       <FeedbackButton onClick={() => setIsFeedbackModalOpen(true)} />
+      <AttestationButton onClick={() => setIsAttestationModalOpen(true)} />
       <FeedbackModal isOpen={isFeedbackModalOpen} onClose={() => setIsFeedbackModalOpen(false)} onSubmit={handleSubmitFeedback} isLoading={isFeedbackLoading} />
       <AddTopicModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onAdd={handleAddTopic} isLoading={isLoading} showAILoader={showAILoader} />
       <DailyBriefModal isOpen={isDailyBriefModalOpen} onClose={() => setIsDailyBriefModalOpen(false)} topics={topics} />
       <AILoader isVisible={showAILoader} />
-      <AIDebugPanel debugInfo={aiDebugInfo} onClose={() => setAiDebugInfo(null)} />
+      <AttestationModal isOpen={isAttestationModalOpen} onClose={() => setIsAttestationModalOpen(false)} />
     </div>
   );
 };
