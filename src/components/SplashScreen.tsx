@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Zap, Plus, Sun, Moon, MessageSquare, User, List, LayoutGrid } from 'lucide-react';
+import { Plus, Sun, Moon, MessageSquare, User, List, LayoutGrid } from 'lucide-react';
 import { Topic, TelegramUser } from '../types';
 import KineticTypographyAnimation from './KineticTypographyAnimation';
 
@@ -81,8 +81,14 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, topics, darkMod
       {/* Screen 1: Initial Logo with Fade-Out Logic */}
       <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 ${isFading || screenState !== 'initialLogo' ? 'opacity-0' : 'opacity-100'}`}>
         <div className="text-center transform scale-75">
-          <div className="mb-6 animate-pulse"><Zap className="mx-auto h-12 w-12 text-black dark:text-white" /></div>
-          <h1 className="text-4xl font-bold text-black dark:text-white mb-3" style={{ fontFamily: "'Bitcount Grid Double', monospace" }}>DEGEN FEED</h1>
+          <div className="mb-8 animate-pulse">
+            <img 
+              src={darkMode ? '/whitesignl.png' : '/blacksignl.png'}
+              alt="SIGNL Logo"
+              className="mx-auto h-20 w-auto"
+            />
+          </div>
+          <h1 className="text-4xl font-bold text-black dark:text-white mb-3" style={{ fontFamily: "'Bitcount Grid Double', monospace" }}>SIGNL</h1>
           <div className="flex justify-center space-x-1"><div className="w-1.5 h-1.5 bg-black dark:bg-white rounded-full animate-bounce"></div><div className="w-1.5 h-1.5 bg-black dark:bg-white rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div><div className="w-1.5 h-1.5 bg-black dark:bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div></div>
         </div>
       </div>

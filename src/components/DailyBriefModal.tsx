@@ -72,7 +72,7 @@ const DailyBriefModal: React.FC<DailyBriefModalProps> = ({ isOpen, onClose, topi
               </div>
 
               <h3 className="text-xl font-bold text-black dark:text-white mb-4">
-                Welcome to Degen Daily
+                Welcome to Your Daily Brief
               </h3>
               
               <p className="text-gray-600 dark:text-gray-400 mb-6 leading-relaxed">

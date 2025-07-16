@@ -1,7 +1,7 @@
 // ./src/components/MainFeed.tsx
 
-import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Moon, Sun, MessageSquare, LayoutGrid, List, Menu, Sliders } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Moon, Sun, MessageSquare, LayoutGrid, List, Sliders } from 'lucide-react';
 import { Topic, TelegramUser, SignalProfile, TelegramMessage } from '../types'; // Import TelegramMessage
 import { TwitterService } from '../services/twitterService';
 import { TelegramChannelService } from '../services/telegramChannelService';
@@ -42,8 +42,6 @@ const MainFeed: React.FC<MainFeedProps> = ({ initialTopics, setTopics, darkMode,
   const [selectedTopic, setSelectedTopic] = useState<Topic | null>(null);
   const [compactView, setCompactView] = useState(false);
   const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
@@ -70,16 +68,6 @@ const MainFeed: React.FC<MainFeedProps> = ({ initialTopics, setTopics, darkMode,
       console.error("Failed to fetch signal profiles:", error);
     }
   };
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsMenuOpen(false);
-      }
-    };
-    if (isMenuOpen) document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isMenuOpen]);
 
   const askForFeedbackConsent = async () => {
     if (!telegramUser) return;
@@ -299,28 +287,26 @@ const MainFeed: React.FC<MainFeedProps> = ({ initialTopics, setTopics, darkMode,
   return (
     <div className="min-h-screen bg-white dark:bg-black transition-colors duration-300 flex flex-col">
       <div className="container mx-auto px-4 py-4 sm:py-8 max-w-4xl flex-grow">
-        <div className="flex flex-col sm:flex-row sm:justify-center sm:items-center mb-6 sm:mb-8 space-y-4 sm:space-y-0">
-          <div className="relative w-full sm:w-auto" ref={menuRef}>
-            <div className="hidden sm:flex items-center space-x-3">
-              <button onClick={toggleDarkMode} className="p-3 rounded-full glass border"><span className="sr-only">Toggle Theme</span>{darkMode ? <Sun className="w-5 h-5 text-white" /> : <Moon className="w-5 h-5 text-black" />}</button>
-              {topics.length > 0 && <button onClick={() => setCompactView(!compactView)} className="p-3 rounded-full glass border"><span className="sr-only">Toggle View</span>{compactView ? <LayoutGrid className="w-5 h-5 text-black dark:text-white" /> : <List className="w-5 h-5 text-black dark:text-white" />}</button>}
-              <button onClick={() => setView('profiles')} className="px-6 py-3 rounded-full bg-gray-100 dark:bg-gray-800 font-medium flex items-center space-x-2 text-black dark:text-white"><Sliders size={16}/><span>Profiles</span></button>
-              <button onClick={() => setIsDailyBriefModalOpen(true)} className="px-6 py-3 rounded-full bg-gray-100 dark:bg-gray-800 font-medium flex items-center space-x-2 text-black dark:text-white"><MessageSquare size={16}/><span>Daily Brief</span></button>
-              <button onClick={() => setIsModalOpen(true)} className="px-6 py-3 rounded-full bg-black dark:bg-white text-white dark:text-black font-medium flex items-center space-x-2"><Plus size={18}/><span>Add Signal</span></button>
-            </div>
-            <div className="flex sm:hidden justify-end">
-              <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="p-2 rounded-full glass border"><Menu className="w-5 h-5 text-black dark:text-white" /></button>
-            </div>
-            {isMenuOpen && (
-              <div className="absolute top-full right-0 mt-2 w-56 bg-white dark:bg-gray-900 rounded-lg shadow-xl border z-20">
-                <button onClick={() => { setView('profiles'); setIsMenuOpen(false); }} className="flex items-center w-full px-4 py-3 text-left text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-t-lg"><Sliders className="w-4 h-4 mr-3" /> Signal Profiles</button>
-                <button onClick={() => { setIsModalOpen(true); setIsMenuOpen(false); }} className="flex items-center w-full px-4 py-3 text-left text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"><Plus className="w-4 h-4 mr-3" /> Add Signal</button>
-                <button onClick={() => { setIsDailyBriefModalOpen(true); setIsMenuOpen(false); }} className="flex items-center w-full px-4 py-3 text-left text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800"><MessageSquare className="w-4 h-4 mr-3" /> Daily Brief</button>
-                {topics.length > 0 && <button onClick={() => { setCompactView(!compactView); setIsMenuOpen(false); }} className="flex items-center w-full px-4 py-3 text-left text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800">{compactView ? <LayoutGrid className="w-4 h-4 mr-3" /> : <List className="w-4 h-4 mr-3" />} {compactView ? 'Detailed View' : 'Compact View'}</button>}
-                <button onClick={() => { toggleDarkMode(); setIsMenuOpen(false); }} className="flex items-center w-full px-4 py-3 text-left text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-b-lg">{darkMode ? <Sun className="w-4 h-4 mr-3" /> : <Moon className="w-4 h-4 mr-3" />} {darkMode ? 'Light Mode' : 'Dark Mode'}</button>
-              </div>
-            )}
+        <div className="flex justify-between items-center mb-6 sm:mb-8">
+          
+          {/* Desktop Header */}
+          <div className="hidden sm:flex items-center space-x-3">
+            <button onClick={toggleDarkMode} className="p-3 rounded-full glass border"><span className="sr-only">Toggle Theme</span>{darkMode ? <Sun className="w-5 h-5 text-white" /> : <Moon className="w-5 h-5 text-black" />}</button>
+            {topics.length > 0 && <button onClick={() => setCompactView(!compactView)} className="p-3 rounded-full glass border"><span className="sr-only">Toggle View</span>{compactView ? <LayoutGrid className="w-5 h-5 text-black dark:text-white" /> : <List className="w-5 h-5 text-black dark:text-white" />}</button>}
+            <button onClick={() => setView('profiles')} className="px-6 py-3 rounded-full bg-gray-100 dark:bg-gray-800 font-medium flex items-center space-x-2 text-black dark:text-white"><Sliders size={16}/><span>Profiles</span></button>
+            <button onClick={() => setIsDailyBriefModalOpen(true)} className="px-6 py-3 rounded-full bg-gray-100 dark:bg-gray-800 font-medium flex items-center space-x-2 text-black dark:text-white"><MessageSquare size={16}/><span>Daily Brief</span></button>
+            <button onClick={() => setIsModalOpen(true)} className="px-6 py-3 rounded-full bg-black dark:bg-white text-white dark:text-black font-medium flex items-center space-x-2"><Plus size={18}/><span>Add Signal</span></button>
           </div>
+
+          {/* Mobile Header: Icon-only buttons */}
+          <div className="flex sm:hidden items-center justify-end space-x-2 w-full">
+            <button onClick={toggleDarkMode} className="p-2.5 rounded-full glass border"><span className="sr-only">Toggle Theme</span>{darkMode ? <Sun className="w-5 h-5 text-white" /> : <Moon className="w-5 h-5 text-black" />}</button>
+            {topics.length > 0 && <button onClick={() => setCompactView(!compactView)} className="p-2.5 rounded-full glass border"><span className="sr-only">Toggle View</span>{compactView ? <LayoutGrid className="w-5 h-5 text-black dark:text-white" /> : <List className="w-5 h-5 text-black dark:text-white" />}</button>}
+            <button onClick={() => setView('profiles')} className="p-2.5 rounded-full glass border"><span className="sr-only">Signal Profiles</span><Sliders className="w-5 h-5 text-black dark:text-white" /></button>
+            <button onClick={() => setIsDailyBriefModalOpen(true)} className="p-2.5 rounded-full glass border"><span className="sr-only">Daily Brief</span><MessageSquare className="w-5 h-5 text-black dark:text-white" /></button>
+            <button onClick={() => setIsModalOpen(true)} className="p-2.5 rounded-full bg-black dark:bg-white text-white dark:text-black"><span className="sr-only">Add Signal</span><Plus className="w-5 h-5" /></button>
+          </div>
+
         </div>
         {topics.length === 0 ? (
           <div className="text-center py-16 glass rounded-2xl"><div className="w-16 h-16 mx-auto mb-4 rounded-full glass flex items-center justify-center"><Plus className="w-8 h-8 text-black dark:text-white"/></div><h3 className="text-xl font-semibold mb-2 text-black dark:text-white">No signals yet</h3><p className="text-gray-500 dark:text-gray-400 mb-6">Add your first signal source to start tracking</p><button onClick={() => setIsModalOpen(true)} className="px-6 py-3 rounded-full bg-black dark:bg-white text-white dark:text-black font-medium">Get Started</button></div>

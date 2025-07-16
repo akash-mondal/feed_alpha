@@ -63,7 +63,7 @@ const TelegramAuth: React.FC<TelegramAuthProps> = ({ onAuthComplete }) => {
         </div>
         
         <h1 className="text-3xl font-bold text-black dark:text-white mb-4" style={{ fontFamily: "'Josefin Sans', sans-serif" }}>
-          Degen Feed
+          SIGNL
         </h1>
         
         <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">

@@ -2,7 +2,7 @@ import { Topic, CacheData } from '../types';
 
 export class CacheService {
   private static instance: CacheService;
-  private static readonly CACHE_KEY = 'degen_feed_cache';
+  private static readonly CACHE_KEY = 'signl_cache';
   private static readonly CACHE_DURATION = 12 * 60 * 60 * 1000; // 12 hours
 
   public static getInstance(): CacheService {

@@ -143,16 +143,31 @@ const SignalProfileModal: React.FC<SignalProfileModalProps> = ({
                           <option value="keyword">Keyword</option>
                           <option value="custom">Custom</option>
                         </select>
-                      <input type="text" value={rule.value} onChange={e => handleRuleChange(index, 'value', e.target.value)} className="flex-grow px-2 py-1 rounded-md bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-black dark:text-white" placeholder={rule.type === 'custom' ? 'e.g., mentions of new partnerships' : 'Value'}/>
+                      <input type="text" value={rule.value} onChange={e => handleRuleChange(index, 'value', e.target.value)} className="flex-1 min-w-0 px-2 py-1 rounded-md bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-black dark:text-white" placeholder={rule.type === 'custom' ? 'e.g., mentions of new partnerships' : 'Value'}/>
                       <button onClick={() => handleRemoveRule(index)}><Trash2 className="w-4 h-4 text-red-500"/></button>
                     </div>
                     {rule.type !== 'custom' && (
-                      <div className="flex items-center space-x-4 text-xs text-gray-500 dark:text-gray-400">
-                        <span>{'Alert if mentioned >'}</span>
-                        <input type="number" value={rule.mentionThreshold} onChange={e => handleRuleChange(index, 'mentionThreshold', parseInt(e.target.value))} className="w-16 px-2 py-1 rounded-md bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-black dark:text-white" />
-                        <span>times in</span>
-                        <input type="number" value={rule.groupThreshold} onChange={e => handleRuleChange(index, 'groupThreshold', parseInt(e.target.value))} className="w-16 px-2 py-1 rounded-md bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-black dark:text-white" />
-                        <span>group(s)</span>
+                      <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-x-3 gap-y-2 text-xs text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center space-x-2">
+                          <span>Alert if mentioned &gt;</span>
+                          <input
+                            type="number"
+                            value={rule.mentionThreshold}
+                            onChange={e => handleRuleChange(index, 'mentionThreshold', parseInt(e.target.value))}
+                            className="w-14 text-center px-2 py-1 rounded-md bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-black dark:text-white"
+                          />
+                          <span>times</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span>in</span>
+                          <input
+                            type="number"
+                            value={rule.groupThreshold}
+                            onChange={e => handleRuleChange(index, 'groupThreshold', parseInt(e.target.value))}
+                            className="w-14 text-center px-2 py-1 rounded-md bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-black dark:text-white"
+                          />
+                          <span>group(s)</span>
+                        </div>
                       </div>
                     )}
                   </div>

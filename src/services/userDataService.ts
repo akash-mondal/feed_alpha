@@ -2,7 +2,7 @@ import { Topic, TelegramUser, UserData } from '../types';
 
 export class UserDataService {
   private static instance: UserDataService;
-  private static readonly USER_DATA_KEY = 'degen_feed_user_data';
+  private static readonly USER_DATA_KEY = 'signl_user_data';
 
   public static getInstance(): UserDataService {
     if (!UserDataService.instance) {
